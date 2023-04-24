@@ -4,6 +4,7 @@ import (
 	"auth-ms/DTO"
 	"auth-ms/model"
 	"auth-ms/provider"
+	"auth-ms/shared/token"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -33,11 +34,11 @@ func (s *authServiceImpl) Auth(data DTO.AuthRequestDTO) (DTO.TokenResponseDTO, e
 		return DTO.TokenResponseDTO{}, err
 	}
 
-	tokens, err := CreateTokenPair(user)
+	tokens, err := token.CreateTokenPair(user)
 	if err != nil {
 		return DTO.TokenResponseDTO{}, err
 	}
-	return DTO.TokenResponseDTO{AccessToken: tokens.accessToken, RefreshToken: tokens.refreshToken}, nil
+	return DTO.TokenResponseDTO{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken}, nil
 }
 
 func (s *authServiceImpl) Registration(data DTO.RegistrationRequestDTO) error {
@@ -56,7 +57,7 @@ func (s *authServiceImpl) Registration(data DTO.RegistrationRequestDTO) error {
 }
 
 func (s *authServiceImpl) Refresh(data DTO.RefreshRequestDTO) (DTO.TokenResponseDTO, error) {
-	parsedToken, err := ParseRefreshToken(data.Token)
+	parsedToken, err := token.ParseRefreshToken(data.Token)
 	if err != nil {
 		return DTO.TokenResponseDTO{}, err
 	}
@@ -64,12 +65,12 @@ func (s *authServiceImpl) Refresh(data DTO.RefreshRequestDTO) (DTO.TokenResponse
 	if err != nil {
 		return DTO.TokenResponseDTO{}, err
 	}
-	newTokenPair, err := CreateTokenPair(user)
+	newTokenPair, err := token.CreateTokenPair(user)
 	if err != nil {
 		return DTO.TokenResponseDTO{}, err
 	}
 
-	return DTO.TokenResponseDTO{AccessToken: newTokenPair.accessToken, RefreshToken: newTokenPair.refreshToken}, nil
+	return DTO.TokenResponseDTO{AccessToken: newTokenPair.AccessToken, RefreshToken: newTokenPair.RefreshToken}, nil
 }
 
 func (s *authServiceImpl) DeleteUser(id uint) error {

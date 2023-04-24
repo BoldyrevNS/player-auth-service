@@ -1,28 +1,29 @@
 package router
 
 import (
-	"auth-ms/service"
+	"auth-ms/shared/response"
+	"auth-ms/shared/token"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 func AdminPermissionMiddleware(c *gin.Context) {
-	token, err := service.GetTokenFromHeader(c)
+	headerToken, err := token.GetTokenFromHeader(c)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, service.ResponseMessageJSON{
+		c.AbortWithStatusJSON(http.StatusUnauthorized, response.MessageJSON{
 			Message: err.Error(),
 		})
 		return
 	}
-	accessTokenClaims, err := service.ParseAccessToken(token)
+	accessTokenClaims, err := token.ParseAccessToken(headerToken)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, service.ResponseMessageJSON{
+		c.AbortWithStatusJSON(http.StatusUnauthorized, response.MessageJSON{
 			Message: err.Error(),
 		})
 		return
 	}
 	if accessTokenClaims.Role != "admin" {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, service.ResponseMessageJSON{
+		c.AbortWithStatusJSON(http.StatusUnauthorized, response.MessageJSON{
 			Message: "permission denied",
 		})
 		return

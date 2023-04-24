@@ -1,4 +1,4 @@
-package service
+package token
 
 import (
 	"auth-ms/model"
@@ -24,12 +24,12 @@ type RefreshClaims struct {
 	Id uint `json:"id"`
 }
 
-type TokenPair struct {
-	accessToken  string
-	refreshToken string
+type Pair struct {
+	AccessToken  string
+	RefreshToken string
 }
 
-func CreateTokenPair(data model.User) (TokenPair, error) {
+func CreateTokenPair(data model.User) (Pair, error) {
 	secret := []byte(os.Getenv("JWT_SECRET"))
 	accessTokenRaw := jwt.NewWithClaims(jwt.SigningMethodHS256, &AccessClaims{
 		RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour))},
@@ -41,7 +41,7 @@ func CreateTokenPair(data model.User) (TokenPair, error) {
 	})
 	accessToken, err := accessTokenRaw.SignedString(secret)
 	if err != nil {
-		return TokenPair{}, err
+		return Pair{}, err
 	}
 	refreshTokenRaw := jwt.NewWithClaims(jwt.SigningMethodHS256, &RefreshClaims{
 		RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 2))},
@@ -49,9 +49,9 @@ func CreateTokenPair(data model.User) (TokenPair, error) {
 	})
 	refreshToken, err := refreshTokenRaw.SignedString(secret)
 	if err != nil {
-		return TokenPair{}, err
+		return Pair{}, err
 	}
-	return TokenPair{accessToken: accessToken, refreshToken: refreshToken}, nil
+	return Pair{AccessToken: accessToken, RefreshToken: refreshToken}, nil
 }
 
 func GetTokenFromHeader(c *gin.Context) (string, error) {

@@ -1,12 +1,12 @@
-package service
+package response
 
 import "github.com/gin-gonic/gin"
 
-type ResponseMessageJSON struct {
+type MessageJSON struct {
 	Message string `json:"message" example:"msg"`
 }
 
-type ResponseJSON struct {
+type DataJSON struct {
 	Data interface{} `json:"data"`
 }
 

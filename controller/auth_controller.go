@@ -3,6 +3,8 @@ package controller
 import (
 	"auth-ms/DTO"
 	"auth-ms/service"
+	"auth-ms/shared/response"
+	"auth-ms/shared/token"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -31,8 +33,8 @@ func NewAuthController(authService service.AuthService) AuthController {
 // @Summary			Auth user
 // @Description 	Check user credentials and auth in service
 // @Param			user body DTO.AuthRequestDTO true "User authorization"
-// @Success			200 {object} service.ResponseJSON{data=DTO.TokenResponseDTO{}}
-// @Failure      	404  {object}  service.ResponseMessageJSON{}
+// @Success			200 {object} service.DataJSON{data=DTO.TokenResponseDTO{}}
+// @Failure      	404  {object}  service.MessageJSON{}
 // @Failure      	400
 // @Router			/auth [post]
 func (c *authControllerImpl) Auth(ctx *gin.Context) {
@@ -45,13 +47,13 @@ func (c *authControllerImpl) Auth(ctx *gin.Context) {
 	tokens, err := c.authService.Auth(authRequest)
 	if err != nil {
 		if err.Error() == "record not found" {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, service.ResponseMessageJSON{Message: "User not found"})
+			ctx.AbortWithStatusJSON(http.StatusNotFound, response.MessageJSON{Message: "User not found"})
 			return
 		}
 		ctx.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
-	service.SendJSON(ctx, http.StatusOK, service.ResponseJSON{
+	response.SendJSON(ctx, http.StatusOK, response.DataJSON{
 		Data: tokens,
 	})
 }
@@ -62,7 +64,7 @@ func (c *authControllerImpl) Auth(ctx *gin.Context) {
 // @Description 	Create new user in database, gave default permissions
 // @Param			user body DTO.RegistrationRequestDTO true "User registration"
 // @Success			201
-// @Failure      	409 {object}  service.ResponseMessageJSON{}
+// @Failure      	409 {object}  service.MessageJSON{}
 // @Failure      	400
 // @Router			/auth/registration [post]
 func (c *authControllerImpl) Registration(ctx *gin.Context) {
@@ -75,7 +77,7 @@ func (c *authControllerImpl) Registration(ctx *gin.Context) {
 	err = c.authService.Registration(registrationRequest)
 	if err != nil {
 		if err.Error() == "duplicated key not allowed" {
-			ctx.AbortWithStatusJSON(http.StatusConflict, service.ResponseMessageJSON{
+			ctx.AbortWithStatusJSON(http.StatusConflict, response.MessageJSON{
 				Message: "Email already exists",
 			})
 		}
@@ -90,7 +92,7 @@ func (c *authControllerImpl) Registration(ctx *gin.Context) {
 // @Summary			Refresh tokens
 // @Description 	Gave new token pair
 // @Param			user body DTO.RefreshRequestDTO true "Refresh tokens"
-// @Success			200 {object} service.ResponseJSON{data=DTO.TokenResponseDTO{}}
+// @Success			200 {object} service.DataJSON{data=DTO.TokenResponseDTO{}}
 // @Failure      	400
 // @Failure      	401
 // @Router			/auth/refresh [post]
@@ -106,7 +108,7 @@ func (c *authControllerImpl) Refresh(ctx *gin.Context) {
 		ctx.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
-	service.SendJSON(ctx, http.StatusOK, service.ResponseJSON{
+	response.SendJSON(ctx, http.StatusOK, response.DataJSON{
 		Data: tokens,
 	})
 }
@@ -118,22 +120,22 @@ func (c *authControllerImpl) Refresh(ctx *gin.Context) {
 // @Description		Remove user data by id.
 // @Param			userId   path   uint  true  "User ID"
 // @Success			200
-// @Failure      	400 {object} service.ResponseMessageJSON{}
-// @Failure      	500 {object} service.ResponseMessageJSON{}
+// @Failure      	400 {object} service.MessageJSON{}
+// @Failure      	500 {object} service.MessageJSON{}
 // @Router			/auth/{userId} [delete]
 func (c *authControllerImpl) DeleteUser(ctx *gin.Context) {
 	userIdParam, find := ctx.Params.Get("userId")
 	if !find {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, service.ResponseMessageJSON{Message: "Provide id param"})
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, response.MessageJSON{Message: "Provide id param"})
 		return
 	}
 	userId, err := strconv.Atoi(userIdParam)
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, service.ResponseMessageJSON{Message: "Wrong format"})
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, response.MessageJSON{Message: "Wrong format"})
 	}
 	err = c.authService.DeleteUser(uint(userId))
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, service.ResponseMessageJSON{Message: "Delete error"})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, response.MessageJSON{Message: "Delete error"})
 	}
 	ctx.AbortWithStatus(http.StatusOK)
 }
@@ -142,17 +144,17 @@ func (c *authControllerImpl) DeleteUser(ctx *gin.Context) {
 // @Tags			Auth
 // @Summary			Get all users
 // @Security 		BearerAuth
-// @Success			200 {object} service.ResponseJSON{data=[]DTO.UserDTO}
+// @Success			200 {object} service.DataJSON{data=[]DTO.UserDTO}
 // @Failure      	401
 // @Failure      	500
 // @Router			/auth/allUsers [get]
 func (c *authControllerImpl) GetAllUsers(ctx *gin.Context) {
-	token, err := service.GetTokenFromHeader(ctx)
+	headerToken, err := token.GetTokenFromHeader(ctx)
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
-	accessClaims, err := service.ParseAccessToken(token)
+	accessClaims, err := token.ParseAccessToken(headerToken)
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusUnauthorized)
 		return
@@ -162,7 +164,7 @@ func (c *authControllerImpl) GetAllUsers(ctx *gin.Context) {
 		ctx.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	service.SendJSON(ctx, http.StatusOK, service.ResponseJSON{
+	response.SendJSON(ctx, http.StatusOK, response.DataJSON{
 		Data: users,
 	})
 }
